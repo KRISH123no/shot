@@ -300,6 +300,100 @@ def cmd_demo(args) -> int:
     return 0
 
 
+def default_root() -> pathlib.Path:
+    return pathlib.Path.home() / "Desktop" / "Screenshots"
+
+
+def cmd_organise(args) -> int:
+    """File screenshots into a folder per period, named after their contents."""
+    from .organise import apply as apply_plan
+    from .organise import build, summarise
+
+    index = Index(args.db)
+    root = pathlib.Path(args.root).expanduser() if args.root else default_root()
+    rows = index.rows(kind=args.kind)
+    if not rows:
+        print("nothing indexed — run `shot scan` first")
+        return 1
+
+    plan = build(rows, root=root, period=args.by, rename=not args.keep_names)
+    if not plan.doing:
+        print("everything is already filed")
+        return 0
+
+    print(f"{len(plan)} screenshots -> {short(str(root))}/")
+    print()
+    print("\n".join(summarise(plan)))
+    print()
+    for folder, count in plan.folders.items():
+        print(f"  {folder}   {count}")
+
+    if not args.apply:
+        print(paint("\nnothing moved — pass --apply to do it.", DIM))
+        return 0
+
+    moved, failures = apply_plan(plan)
+    for move in plan.moves:
+        if move.target != move.source and not move.skip:
+            index.move(str(move.source), str(move.target))
+    print(f"\nmoved {moved}")
+    for path, error in failures[:5]:
+        print(paint(f"  ! {short(str(path))}: {error}", RED))
+    return 0
+
+
+def cmd_watch(args) -> int:
+    """File every screenshot as it appears."""
+    from .ocr import Engine
+    from .watch import watch
+
+    index = Index(args.db)
+    folder = pathlib.Path(args.folder).expanduser() if args.folder else pathlib.Path.home() / "Desktop"
+    root = pathlib.Path(args.root).expanduser() if args.root else default_root()
+    try:
+        engine = Engine()
+    except RuntimeError as error:
+        print(error)
+        return 1
+
+    mode = "filing" if args.apply else paint("watching only (pass --apply to move files)", DIM)
+    print(f"watching {short(str(folder))} → {short(str(root))}/  {mode}")
+
+    def report(source, target):
+        when = datetime.now().strftime("%H:%M:%S")
+        if target is None:
+            print(f"  {when}  {source.name}")
+        else:
+            print(f"  {when}  {source.name}\n            → {target.parent.name}/{target.name}")
+
+    watch(index, folder, root=root, period=args.by, interval=args.interval,
+          apply=args.apply, engine=engine, on_file=report)
+    return 0
+
+
+def cmd_watch_install(args) -> int:
+    from .watch import install, is_running
+
+    folder = pathlib.Path(args.folder).expanduser() if args.folder else pathlib.Path.home() / "Desktop"
+    root = pathlib.Path(args.root).expanduser() if args.root else default_root()
+    try:
+        path = install(folder=folder, root=root, period=args.by)
+    except RuntimeError as error:
+        print(error)
+        return 1
+    print(f"installed {path}")
+    print(f"new screenshots in {short(str(folder))} will be filed into {short(str(root))}/")
+    print("running" if is_running() else "installed but not running — see ~/.shot/watcher.log")
+    return 0
+
+
+def cmd_watch_uninstall(args) -> int:
+    from .watch import uninstall
+
+    print("removed" if uninstall() else "nothing installed")
+    return 0
+
+
 def cmd_reclassify(args) -> int:
     """Apply improved rules to everything already read, without reading again."""
     from .classify import classify
@@ -406,6 +500,33 @@ def build_parser() -> argparse.ArgumentParser:
     rename.add_argument("--kind")
     rename.add_argument("--limit", type=int, default=25)
     rename.set_defaults(func=cmd_rename)
+
+    def filing_args(p):
+        p.add_argument("--root", help="where to file them (default ~/Desktop/Screenshots)")
+        p.add_argument("--by", choices=["day", "month", "year", "flat"], default="month")
+
+    organise = sub.add_parser("organise", aliases=["organize"],
+                              help="file screenshots into dated folders, named by content")
+    filing_args(organise)
+    organise.add_argument("--apply", action="store_true", help="actually move them")
+    organise.add_argument("--keep-names", action="store_true", help="file them, do not rename")
+    organise.add_argument("--kind")
+    organise.set_defaults(func=cmd_organise)
+
+    watch = sub.add_parser("watch", help="file every new screenshot as you take it")
+    filing_args(watch)
+    watch.add_argument("--folder", help="where screenshots land (default ~/Desktop)")
+    watch.add_argument("--interval", type=float, default=3.0)
+    watch.add_argument("--apply", action="store_true", help="actually move them")
+    watch.set_defaults(func=cmd_watch)
+
+    wi = sub.add_parser("watch-install", help="run the watcher at login")
+    filing_args(wi)
+    wi.add_argument("--folder")
+    wi.set_defaults(func=cmd_watch_install)
+
+    sub.add_parser("watch-uninstall", help="stop and remove the watcher").set_defaults(
+        func=cmd_watch_uninstall)
 
     sub.add_parser(
         "reclassify", help="re-apply the rules to everything, without re-reading"

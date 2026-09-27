@@ -14,10 +14,42 @@ upload it to.
 ```bash
 pip install -e ".[mac,dev]"
 shot demo              # see what it does, no pictures needed
-shot doctor            # check this Mac can do it
 shot scan              # read Desktop and Downloads
 shot find turnitin     # and then, forever
+
+shot organise          # show where they would be filed
+shot organise --apply  # Screenshots/2026-09/2026-09-08 chat — dr sumit goswami.png
+shot watch-install     # and from now on, automatically, as you take them
 ```
+
+## Filing itself
+
+`shot watch-install` puts a watcher behind your login. Press the shortcut, the file lands on the
+Desktop, and a moment later it is in `Screenshots/2026-09/` under a name that says what it is. Your
+Desktop stops filling up and you never think about it.
+
+Two details that decide whether this works:
+
+**A new screenshot is not a finished file.** macOS creates it and then writes it, and a picture read
+in between is a truncated PNG that Vision refuses. So a new file is left alone until its size stops
+changing.
+
+**It polls rather than using FSEvents.** FSEvents delivers through a run loop, and a background
+agent with no run loop never hears it — the exact failure that made a sister project report the
+same application for nineteen days. A directory listing every three seconds costs nothing and
+cannot go quietly stale.
+
+```
+shot organise
+658 screenshots -> ~/Desktop/Screenshots/
+
+  2024-03   422      2026-07    37
+  2026-08    51      2026-09    10
+```
+
+Nothing moves without `--apply`. Nothing is ever overwritten: a name already taken gets `-2`, and if
+the file already sitting there is byte-for-byte the same picture, the move is dropped instead — so
+filing twice is a no-op rather than a duplicate.
 
 ## Why this works at all
 
@@ -94,7 +126,7 @@ glance at and dismiss.
 ## What the tests check
 
 ```bash
-pytest -q      # 178 tests, about a second
+pytest -q      # 213 tests, about a second
 ruff check .
 ```
 
@@ -156,7 +188,7 @@ renamed is recognised by its bytes and carried across rather than read a second 
 | `hashing.py` | 100 | two kinds of sameness |
 | `demo.py` `secrets.py` `model.py` | 251 | a pretend collection, credentials, the three types |
 
-1,745 lines of implementation, 981 of tests.
+2,289 lines of implementation, 1,337 of tests.
 
 ## Not implemented
 
