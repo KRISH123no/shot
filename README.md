@@ -132,7 +132,7 @@ glance at and dismiss.
 ## What the tests check
 
 ```bash
-pytest -q      # 220 tests, about a second
+pytest -q      # 218 tests, about a second
 ruff check .
 ```
 
