@@ -17,8 +17,8 @@ shot demo              # see what it does, no pictures needed
 shot scan              # read Desktop and Downloads
 shot find turnitin     # and then, forever
 
-shot organise          # show where they would be filed
-shot organise --apply  # Screenshots/2026-09/2026-09-08 chat — dr sumit goswami.png
+shot organise --from ~/Desktop        # show where they would be filed
+shot organise --from ~/Desktop --apply  # → Screenshots/2026-09/2026-09-08 chat — dr sumit goswami.png
 shot watch-install     # and from now on, automatically, as you take them
 ```
 
@@ -46,6 +46,12 @@ shot organise
   2024-03   422      2026-07    37
   2026-08    51      2026-09    10
 ```
+
+**`--from` is not optional in practice.** A scan picks up every file named like a screenshot
+anywhere it walked. On this machine 550 of 658 were inside an archive of class IX and X notes, filed
+by hand years ago into folders like `class IX/FINALS/economy/Poverty`. Sweeping those into
+folder-per-month would have destroyed real organisation to tidy a problem they were not part of. So
+scope it to the folder where things are actually loose, and subfolders are excluded unless you ask.
 
 Nothing moves without `--apply`. Nothing is ever overwritten: a name already taken gets `-2`, and if
 the file already sitting there is byte-for-byte the same picture, the move is dropped instead — so
@@ -126,7 +132,7 @@ glance at and dismiss.
 ## What the tests check
 
 ```bash
-pytest -q      # 213 tests, about a second
+pytest -q      # 220 tests, about a second
 ruff check .
 ```
 
@@ -188,7 +194,7 @@ renamed is recognised by its bytes and carried across rather than read a second 
 | `hashing.py` | 100 | two kinds of sameness |
 | `demo.py` `secrets.py` `model.py` | 251 | a pretend collection, credentials, the three types |
 
-2,289 lines of implementation, 1,337 of tests.
+2,329 lines of implementation, 1,385 of tests.
 
 ## Not implemented
 

@@ -182,3 +182,40 @@ def test_the_index_can_follow_the_move(tmp_path):
         apply(plan)
         index.move(str(source), str(target))
         assert index.search("findable")[0].path == str(target)
+
+
+# --------------------------------------------------------------- scoping
+
+
+def test_only_files_loose_in_the_folder_are_taken(tmp_path):
+    """An archive of school notes is already organised; leave it alone."""
+    from shot.organise import under
+
+    loose = picture(tmp_path, "a.png")
+    (tmp_path / "old notes" / "class IX").mkdir(parents=True)
+    filed = tmp_path / "old notes" / "class IX" / "b.png"
+    filed.write_bytes(b"y" * 50)
+
+    kept = under([row(loose), row(filed)], tmp_path)
+    assert [Path(r["path"]).name for r in kept] == ["a.png"]
+
+
+def test_subfolders_can_be_asked_for_explicitly(tmp_path):
+    from shot.organise import under
+
+    loose = picture(tmp_path, "a.png")
+    (tmp_path / "deep").mkdir()
+    nested = tmp_path / "deep" / "b.png"
+    nested.write_bytes(b"y" * 50)
+
+    kept = under([row(loose), row(nested)], tmp_path, recursive=True)
+    assert len(kept) == 2
+
+
+def test_a_folder_with_nothing_loose_in_it_yields_nothing(tmp_path):
+    from shot.organise import under
+
+    (tmp_path / "deep").mkdir()
+    nested = tmp_path / "deep" / "b.png"
+    nested.write_bytes(b"y" * 50)
+    assert under([row(nested)], tmp_path) == []

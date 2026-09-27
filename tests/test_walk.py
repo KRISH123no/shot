@@ -124,3 +124,14 @@ def test_the_screenshot_filter_leaves_photographs_out(tmp_path):
 
 def test_skip_dir_says_no_to_dotfolders():
     assert skip_dir(".git") and skip_dir("node_modules") and not skip_dir("Desktop")
+
+
+def test_a_small_screenshot_is_not_mistaken_for_an_icon(tmp_path):
+    """A screenshot of a small dialog is a few kilobytes and still wanted."""
+    make(tmp_path, "Screenshot 2026-07-16 at 9.10.56 PM.png", size=4587)
+    assert found(tmp_path) == ["Screenshot 2026-07-16 at 9.10.56 PM.png"]
+
+
+def test_but_a_small_unnamed_image_is_still_an_icon(tmp_path):
+    make(tmp_path, "toolbar-icon.png", size=300)
+    assert found(tmp_path) == []

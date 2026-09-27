@@ -100,7 +100,11 @@ def images(
                     stat = path.stat()
                 except OSError:
                     continue  # vanished, or not ours to read
-                if stat.st_size < min_bytes:
+                # The size floor is there to skip interface assets. A file
+                # named like a screenshot is never one, and a screenshot of a
+                # small dialog is genuinely only a few kilobytes — four real
+                # ones were silently skipped before this exception existed.
+                if stat.st_size < min_bytes and not SCREENSHOT.match(name):
                     continue
                 # The same file reached down two paths is still one file.
                 key = (stat.st_dev, stat.st_ino)

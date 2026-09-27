@@ -74,6 +74,28 @@ def folder_for(when: float, *, period: str = "month") -> str:
     return datetime.fromtimestamp(when).strftime(pattern) if pattern else ""
 
 
+def under(rows: Iterable, folder: Path, *, recursive: bool = False) -> list:
+    """Only the screenshots in a given folder.
+
+    Not recursive by default, and that default matters. A scan picks up every
+    file named like a screenshot anywhere it walked, including the ones filed
+    years ago inside an archive of school notes. Those are already organised;
+    sweeping them into a folder-per-month would destroy the structure someone
+    built by hand. Loose files in one folder are the thing worth tidying.
+    """
+    folder = folder.expanduser().resolve()
+    kept = []
+    for row in rows:
+        parent = Path(row["path"]).parent
+        try:
+            parent = parent.resolve()
+        except OSError:
+            continue
+        if parent == folder or (recursive and folder in parent.parents):
+            kept.append(row)
+    return kept
+
+
 def build(
     rows: Iterable,
     *,

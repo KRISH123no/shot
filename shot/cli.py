@@ -307,7 +307,7 @@ def default_root() -> pathlib.Path:
 def cmd_organise(args) -> int:
     """File screenshots into a folder per period, named after their contents."""
     from .organise import apply as apply_plan
-    from .organise import build, summarise
+    from .organise import build, summarise, under
 
     index = Index(args.db)
     root = pathlib.Path(args.root).expanduser() if args.root else default_root()
@@ -315,6 +315,16 @@ def cmd_organise(args) -> int:
     if not rows:
         print("nothing indexed — run `shot scan` first")
         return 1
+
+    if args.source:
+        folder = pathlib.Path(args.source).expanduser()
+        before = len(rows)
+        rows = under(rows, folder, recursive=args.recursive)
+        scope = "and below" if args.recursive else "only, not subfolders"
+        print(paint(f"{len(rows)} of {before} are in {short(str(folder))} {scope}", DIM))
+        if not rows:
+            print("nothing to file there")
+            return 0
 
     plan = build(rows, root=root, period=args.by, rename=not args.keep_names)
     if not plan.doing:
@@ -509,6 +519,10 @@ def build_parser() -> argparse.ArgumentParser:
                               help="file screenshots into dated folders, named by content")
     filing_args(organise)
     organise.add_argument("--apply", action="store_true", help="actually move them")
+    organise.add_argument("--from", dest="source",
+                          help="only screenshots loose in this folder")
+    organise.add_argument("--recursive", action="store_true",
+                          help="include subfolders too (they may already be organised)")
     organise.add_argument("--keep-names", action="store_true", help="file them, do not rename")
     organise.add_argument("--kind")
     organise.set_defaults(func=cmd_organise)
