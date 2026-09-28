@@ -27,7 +27,7 @@ from .classify import classify
 from .hashing import dhash, digest, to_unsigned
 from .index import Index
 from .model import Shot
-from .naming import best_title
+from .naming import describe
 from .ocr import Engine
 
 
@@ -68,7 +68,7 @@ def _examine(path: Path, engine: Engine, known_digest: str = "") -> Shot:
         shot.width, shot.height, shot.lines = engine.read(path)
         shot.text = "\n".join(line.text for line in shot.lines)
         shot.kind = classify(shot.lines)
-        shot.title = best_title(shot.lines)
+        shot.title = describe(shot.lines, shot.kind)
         try:
             shot.phash = dhash(engine.greyscale(path))
         except (OSError, ValueError):

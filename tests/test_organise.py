@@ -219,3 +219,39 @@ def test_a_folder_with_nothing_loose_in_it_yields_nothing(tmp_path):
     nested = tmp_path / "deep" / "b.png"
     nested.write_bytes(b"y" * 50)
     assert under([row(nested)], tmp_path) == []
+
+
+# --------------------------------------------------------- idempotence
+
+
+def test_running_it_twice_is_the_same_as_running_it_once(tmp_path):
+    """The second of two same-titled files sat at -2, saw -2 taken by itself,
+    and walked to -3 on every run."""
+    root = tmp_path / "Shots"
+    a = picture(tmp_path, "a.png", body=b"a" * 50)
+    b = picture(tmp_path, "b.png", body=b"b" * 50)
+
+    first = build([row(a), row(b)], root=root)
+    apply(first)
+    after_one = sorted(p.name for p in (root / "2026-09").iterdir())
+
+    rows = [row(root / "2026-09" / name) for name in after_one]
+    second = build(rows, root=root)
+    assert second.doing == [], "nothing should move on a second pass"
+
+    apply(second)
+    assert sorted(p.name for p in (root / "2026-09").iterdir()) == after_one
+
+
+def test_a_file_keeps_its_numbered_name_across_runs(tmp_path):
+    root = tmp_path / "Shots"
+    folder = root / "2026-09"
+    folder.mkdir(parents=True)
+    first = folder / "2026-09-08 error — session limit reached.png"
+    first.write_bytes(b"one")
+    second = folder / "2026-09-08 error — session limit reached-2.png"
+    second.write_bytes(b"two")
+
+    plan = build([row(first), row(second)], root=root)
+    assert plan.doing == []
+    assert second.exists(), "it must not walk to -3"

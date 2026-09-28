@@ -74,6 +74,22 @@ for every line, so the geometry is free. Ranking lines by how title-shaped they 
 confidently read, a sensible length, more than one word — is what turns
 `Screenshot 2026-09-08 at 6.58.31 PM.png` into `2026-09-08 chat — dr sumit goswami.png`.
 
+**Except in a browser, where that rule is exactly wrong** — and browsers are most of what anyone
+screenshots. The largest text at the top of a browser window is the tab strip, which is the one
+piece of text on screen guaranteed to be damaged: cut to whatever fits the tab, with the close
+button read as a trailing word. A real example from this collection:
+
+```
+'My Dashboard - IIT Madras B x'      ← the tab. "B" is "BS Degree", cut. "x" is the close button.
+'seek.study.iitm.ac.in/courses/...'  ← the address bar
+'Activity Assignment-3'              ← the page
+```
+
+So a browser is named from its **domain**. It is the only string in the window that is never
+truncated and never ambiguous: a tab title is cut to fit, and a page heading may be a logo with no
+text in it at all. The page heading is kept alongside it when it adds something —
+`photos.google.com` needs no help, `seek.study.iitm.ac.in — activity assignment-3` does.
+
 **Two files are the same in two different ways.** A digest catches the copy. It does not catch the
 screenshot you took twice, three seconds apart, one of them with the cursor in it — those are
 completely different bytes. So there is also a perceptual hash: shrink to nine pixels by eight in
@@ -132,7 +148,7 @@ glance at and dismiss.
 ## What the tests check
 
 ```bash
-pytest -q      # 218 tests, about a second
+pytest -q      # 265 tests, about a second
 ruff check .
 ```
 
@@ -150,6 +166,12 @@ Bugs the suite caught:
   truncated from the left and these differed in the middle — in a list whose entire purpose is
   telling near-identical things apart.
 - **A search snippet cut on a highlight boundary printed a bare `[]`.**
+- **Running the organiser twice was not the same as running it once.** The second of two
+  same-titled screenshots sits at `-2`, then on the next pass sees `-2` occupied — by itself — and
+  walked to `-3`, then `-4`. A file's own name now counts as free.
+- **Names that were OCR fragments.** Scanned maths notes gave `60cm2` and `MeDI`, a label off a
+  diagram picked because nothing better was on the page. `2026-03-15 app.png` is the more honest
+  name, so anything under six characters is dropped.
 
 ## A thing worth knowing about macOS
 
@@ -194,7 +216,7 @@ renamed is recognised by its bytes and carried across rather than read a second 
 | `hashing.py` | 100 | two kinds of sameness |
 | `demo.py` `secrets.py` `model.py` | 251 | a pretend collection, credentials, the three types |
 
-2,329 lines of implementation, 1,385 of tests.
+2,476 lines of implementation, 1,646 of tests.
 
 ## Not implemented
 

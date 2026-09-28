@@ -269,7 +269,7 @@ class Index:
             if not lines:
                 continue
             kind = classify(lines)
-            title = title_of(lines) if row["lines"] else row["title"]
+            title = title_of(lines, kind) if row["lines"] else row["title"]
             if (kind, title) != (row["kind"], row["title"]):
                 updates.append((kind, title, row["path"]))
         if updates:

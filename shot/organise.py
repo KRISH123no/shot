@@ -140,21 +140,34 @@ def build(
             moves.append(Move(source, ideal, skip="already there, identical"))
             continue
 
-        target = _free(ideal, claimed)
+        target = _free(ideal, claimed, source)
+        if target == source:
+            moves.append(Move(source, source, skip="already filed"))
+            continue
         claimed.add(target)
         moves.append(Move(source, target))
 
     return Plan(moves)
 
 
-def _free(target: Path, claimed: set[Path]) -> Path:
-    """The first name not already taken on disk or elsewhere in this plan."""
-    if target not in claimed and not target.exists():
+def _free(target: Path, claimed: set[Path], source: Path | None = None) -> Path:
+    """The first name not already taken on disk or elsewhere in this plan.
+
+    A file's own current name counts as free. Without that, the second of two
+    screenshots sharing a title sits at `-2`, sees `-2` occupied on the next
+    run — by itself — and moves to `-3`, then `-4`. Running the organiser
+    twice has to be the same as running it once.
+    """
+
+    def available(candidate: Path) -> bool:
+        return candidate not in claimed and (candidate == source or not candidate.exists())
+
+    if available(target):
         return target
     stem, suffix = target.stem, target.suffix
     for n in range(2, 1000):
         candidate = target.with_name(f"{stem}-{n}{suffix}")
-        if candidate not in claimed and not candidate.exists():
+        if available(candidate):
             return candidate
     raise FileExistsError(f"a thousand files named like {target.name}")
 

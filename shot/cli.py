@@ -407,10 +407,10 @@ def cmd_watch_uninstall(args) -> int:
 def cmd_reclassify(args) -> int:
     """Apply improved rules to everything already read, without reading again."""
     from .classify import classify
-    from .naming import best_title
+    from .naming import describe
 
     index = Index(args.db)
-    changed = index.reclassify(classify, best_title)
+    changed = index.reclassify(classify, describe)
     print(f"reclassified {changed:,} of {index.stats()['count']:,} screenshots")
     return 0
 
